@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bibliothekssystem - Netlify Kompatibel</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        
+        .header {
+            background: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .nav {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .nav-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            background: #2563eb;
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+        
+        .nav-btn:hover {
+            background: #1d4ed8;
+        }
+        
+        .nav-btn.active {
+            background: #1e40af;
+        }
+        
+        .screen {
+            display: none;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .screen.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #64748b;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .list-item {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .list-item:last-child {
+            border-bottom: none;
+        }
+        
+        .status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .status-available {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .status-loaned {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-active {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .status-returned {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .error {
+            color: #ef4444;
+            background: #fef2f2;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
+        
+        .success {
+            color: #10b981;
+            background: #f0fdf4;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2563eb;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+        
+        .isbn-lookup {
+            background: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .isbn-input-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .isbn-input-group input {
+            flex: 1;
+        }
+        
+        .book-preview {
+            background: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            text-align: left;
+        }
+        
+        .quick-add {
+            background: #f0fdf4;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            border: 1px solid #10b981;
+        }
+        
+        @media (max-width: 768px) {
+            .nav {
+                flex-direction: column;
+            }
+            
+            .list-item {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .isbn-input-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📚 Bibliothekssystem</h1>
+            <p>Webbasiertes Bibliothekssystem - Netlify Kompatibel</p>
+        </div>
+
+        <!-- Navigation -->
+        <div class="nav" id="mainNav" style="display: none;">
+            <button class="nav-btn" onclick="showScreen('dashboard')">Dashboard</button>
+            <button class="nav-btn" onclick="showScreen('books')">Bücher</button>
+            <button class="nav-btn" onclick="showScreen('borrowers')">Nutzer</button>
+            <button class="nav-btn" onclick="showScreen('loans')">Ausleihen</button>
+            <button class="nav-btn" onclick="logout()">Abmelden</button>
+        </div>
+
+        <!-- Login Screen -->
+        <div id="loginScreen" class="screen active">
+            <h2>Mitarbeiter-Anmeldung</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">E-Mail</label>
+                    <input type="email" id="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Passwort</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Anmelden</button>
+            </form>
+            <div id="loginError" class="error" style="display: none;"></div>
+        </div>
+
+        <!-- Dashboard Screen -->
+        <div id="dashboardScreen" class="screen">
+            <h2>Dashboard</h2>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalBooks">-</div>
+                    <div class="stat-label">Bücher gesamt</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="availableBooks">-</div>
+                    <div class="stat-label">Verfügbar</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="loanedBooks">-</div>
+                    <div class="stat-label">Ausgeliehen</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalBorrowers">-</div>
+                    <div class="stat-label">Nutzer</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Books Screen -->
+        <div id="booksScreen" class="screen">
+            <h2>Bücher</h2>
+            
+            <!-- ISBN Lookup -->
+            <div class="isbn-lookup">
+                <h3>📚 ISBN-Suche für schnelles Hinzufügen</h3>
+                <p>Geben Sie eine ISBN ein, um automatisch Buchdaten zu laden:</p>
+                <div class="isbn-input-group">
+                    <input type="text" id="isbnLookup" placeholder="ISBN eingeben (z.B. 978-3-123-45678-9)" maxlength="20">
+                    <button class="btn btn-primary" onclick="lookupISBN()">Buchdaten laden</button>
+                </div>
+                <div id="isbnResult" style="display: none;"></div>
+            </div>
+            
+            <div class="form-group">
+                <input type="text" id="bookSearch" placeholder="Bücher suchen...">
+            </div>
+            <div id="booksList"></div>
+            <button class="btn btn-primary" onclick="showAddBookForm()">Neues Buch manuell hinzufügen</button>
+            <button class="btn btn-success" onclick="showCSVImport()">CSV Import</button>
+            
+            <!-- Add Book Form -->
+            <div id="addBookForm" style="display: none; margin-top: 1rem; padding: 1rem; border: 1px solid #e5e7eb; border-radius: 0.5rem;">
+                <h3>Neues Buch hinzufügen</h3>
+                <form id="bookForm">
+                    <div class="form-group">
+                        <label for="bookISBN">ISBN</label>
+                        <input type="text" id="bookISBN">
+                    </div>
+                    <div class="form-group">
+                        <label for="bookTitle">Titel *</label>
+                        <input type="text" id="bookTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bookAuthor">Autor</label>
+                        <input type="text" id="bookAuthor">
+                    </div>
+                    <div class="form-group">
+                        <label for="bookPublisher">Verlag</label>
+                        <input type="text" id="bookPublisher">
+                    </div>
+                    <div class="form-group">
+                        <label for="bookYear">Jahr</label>
+                        <input type="number" id="bookYear" min="1000" max="2030">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Hinzufügen</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideAddBookForm()">Abbrechen</button>
+                </form>
+            </div>
+            
+            <!-- CSV Import -->
+            <div id="csvImport" style="display: none; margin-top: 1rem; padding: 1rem; border: 1px solid #e5e7eb; border-radius: 0.5rem;">
+                <h3>📊 CSV Import</h3>
+                <div class="form-group">
+                    <label for="csvFile">CSV-Datei auswählen:</label>
+                    <input type="file" id="csvFile" accept=".csv" onchange="handleCSVFile()">
+                </div>
+                <div id="csvPreview" style="display: none;">
+                    <h4>Vorschau der Daten:</h4>
+                    <div id="csvTable" style="max-height: 300px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 0.5rem;"></div>
+                    <div style="margin-top: 1rem;">
+                        <button class="btn btn-primary" onclick="importCSVData()">Daten importieren</button>
+                        <button class="btn btn-secondary" onclick="hideCSVImport()">Abbrechen</button>
+                    </div>
+                </div>
+                <div id="csvTemplate" style="margin-top: 1rem; padding: 1rem; background: #f8fafc; border-radius: 0.5rem;">
+                    <h4>📋 CSV-Vorlage:</h4>
+                    <p>Verwenden Sie diese Spaltenüberschriften:</p>
+                    <code style="display: block; padding: 0.5rem; background: white; border-radius: 0.25rem; font-family: monospace;">
+                        isbn,title,author,publisher,year<br>
+                        978-3-123-45678-9,Beispiel Buch,Max Mustermann,Verlag ABC,2023<br>
+                        978-3-987-65432-1,Weiteres Buch,Jane Doe,Verlag XYZ,2022
+                    </code>
+                    <button class="btn btn-secondary" onclick="downloadTemplate()" style="margin-top: 0.5rem;">Vorlage herunterladen</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Borrowers Screen -->
+        <div id="borrowersScreen" class="screen">
+            <h2>Nutzer</h2>
+            <div class="form-group">
+                <input type="text" id="borrowerSearch" placeholder="Nutzer suchen...">
+            </div>
+            <div id="borrowersList"></div>
+            <button class="btn btn-primary" onclick="showAddBorrowerForm()">Neuer Nutzer</button>
+            
+            <!-- Add Borrower Form -->
+            <div id="addBorrowerForm" style="display: none; margin-top: 1rem; padding: 1rem; border: 1px solid #e5e7eb; border-radius: 0.5rem;">
+                <h3>Neuen Nutzer hinzufügen</h3>
+                <form id="borrowerForm">
+                    <div class="form-group">
+                        <label for="borrowerFirstName">Vorname *</label>
+                        <input type="text" id="borrowerFirstName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="borrowerLastName">Nachname *</label>
+                        <input type="text" id="borrowerLastName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="borrowerEmail">E-Mail</label>
+                        <input type="email" id="borrowerEmail">
+                    </div>
+                    <div class="form-group">
+                        <label for="borrowerPhone">Telefon</label>
+                        <input type="tel" id="borrowerPhone">
+                    </div>
+                    <div class="form-group">
+                        <label for="borrowerAddress">Adresse</label>
+                        <textarea id="borrowerAddress" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Hinzufügen</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideAddBorrowerForm()">Abbrechen</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Loans Screen -->
+        <div id="loansScreen" class="screen">
+            <h2>Ausleihen</h2>
+            <div id="loansList"></div>
+            <button class="btn btn-primary" onclick="showLoanForm()">Neue Ausleihe</button>
+            
+            <!-- Loan Form -->
+            <div id="loanForm" style="display: none; margin-top: 1rem; padding: 1rem; border: 1px solid #e5e7eb; border-radius: 0.5rem;">
+                <h3>Neue Ausleihe</h3>
+                <form id="newLoanForm">
+                    <div class="form-group">
+                        <label for="loanBook">Buch</label>
+                        <select id="loanBook" required>
+                            <option value="">Buch auswählen...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="loanBorrower">Nutzer</label>
+                        <select id="loanBorrower" required>
+                            <option value="">Nutzer auswählen...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="loanDueDate">Rückgabedatum</label>
+                        <input type="date" id="loanDueDate" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Ausleihen</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideLoanForm()">Abbrechen</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase Konfiguration
+        const SUPABASE_URL = 'https://pjmhuxpjrwcouvucsfbr.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqbWh1eHBqcndjb3V2dWNzZmJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyMDY5MzUsImV4cCI6MjA3Mzc4MjkzNX0._Zc2BX6uKuAPQ498nSiUvvPeI6c86ScSt90PlmmVPbk';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let currentUser = null;
+        let csvData = null;
+        
+        // App Initialisierung
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            checkAuth();
+            loadPredefinedData(); // CSV-Daten laden
+        });
+        
+        function setupEventListeners() {
+            // Login Form
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            
+            // Book Form
+            document.getElementById('bookForm').addEventListener('submit', handleAddBook);
+            
+            // Borrower Form
+            document.getElementById('borrowerForm').addEventListener('submit', handleAddBorrower);
+            
+            // Loan Form
+            document.getElementById('newLoanForm').addEventListener('submit', handleLoan);
+            
+            // Search
+            document.getElementById('bookSearch').addEventListener('input', searchBooks);
+            document.getElementById('borrowerSearch').addEventListener('input', searchBorrowers);
+            
+            // ISBN Lookup
+            document.getElementById('isbnLookup').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    lookupISBN();
+                }
+            });
+        }
+        
+        async function checkAuth() {
+            try {
+                // Vereinfachte Authentifizierung für statische Bereitstellung
+                const { data: users, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('role', 'admin')
+                    .limit(1);
+                
+                if (users && users.length > 0) {
+                    currentUser = {
+                        id: users[0].id,
+                        email: users[0].email,
+                        role: users[0].role
+                    };
+                    console.log('Admin-Benutzer gefunden:', currentUser.email);
+                    showMainApp();
+                } else {
+                    console.log('Kein Admin-Benutzer gefunden');
+                    showLoginScreen();
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                showLoginScreen();
+            }
+        }
+        
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                // Vereinfachte Authentifizierung - prüfe nur ob Benutzer existiert
+                const { data: users, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('email', email);
+                
+                if (error) throw error;
+                
+                if (users && users.length > 0) {
+                    const user = users[0];
+                    currentUser = {
+                        id: user.id,
+                        email: user.email,
+                        role: user.role
+                    };
+                    console.log('Login erfolgreich:', currentUser.email);
+                    showMainApp();
+                    showSuccess('Erfolgreich angemeldet!');
+                } else {
+                    throw new Error('Benutzer nicht gefunden');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showError('loginError', 'Anmeldung fehlgeschlagen: ' + error.message);
+            }
+        }
+        
+        function showLoginScreen() {
+            // Hide all screens
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            
+            // Show login screen
+            document.getElementById('loginScreen').classList.add('active');
+            
+            // Hide navigation
+            document.getElementById('mainNav').style.display = 'none';
+            
+            // Clear form
+            document.getElementById('loginForm').reset();
+            document.getElementById('loginError').style.display = 'none';
+        }
+        
+        function showMainApp() {
+            // Hide login screen
+            document.getElementById('loginScreen').classList.remove('active');
+            
+            // Show navigation
+            document.getElementById('mainNav').style.display = 'flex';
+            
+            // Show dashboard
+            showScreen('dashboard');
+        }
+        
+        function showScreen(screenName) {
+            // Sicherheitscheck - nur authentifizierte Benutzer können andere Screens sehen
+            if (!currentUser) {
+                showLoginScreen();
+                return;
+            }
+            
+            // Hide all screens
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            
+            // Show selected screen
+            document.getElementById(screenName + 'Screen').classList.add('active');
+            
+            // Update navigation
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            if (event && event.target) {
+                event.target.classList.add('active');
+            }
+            
+            // Load data for screen
+            switch(screenName) {
+                case 'dashboard':
+                    loadDashboardData();
+                    break;
+                case 'books':
+                    loadBooks();
+                    break;
+                case 'borrowers':
+                    loadBorrowers();
+                    break;
+                case 'loans':
+                    loadLoans();
+                    break;
+            }
+        }
+        
+        async function logout() {
+            currentUser = null;
+            showLoginScreen();
+            showSuccess('Erfolgreich abgemeldet!');
+        }
+        
+        async function loadDashboardData() {
+            try {
+                const [booksResponse, borrowersResponse] = await Promise.all([
+                    supabase.from('books').select('*'),
+                    supabase.from('borrowers').select('*')
+                ]);
+                
+                const books = booksResponse.data || [];
+                const borrowers = borrowersResponse.data || [];
+                
+                document.getElementById('totalBooks').textContent = books.length;
+                document.getElementById('availableBooks').textContent = books.filter(b => b.status === 'available').length;
+                document.getElementById('loanedBooks').textContent = books.filter(b => b.status === 'loaned').length;
+                document.getElementById('totalBorrowers').textContent = borrowers.length;
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+        
+        async function loadBooks() {
+            try {
+                const { data, error } = await supabase.from('books').select('*').order('title');
+                if (error) throw error;
+                
+                displayBooks(data || []);
+            } catch (error) {
+                console.error('Error loading books:', error);
+            }
+        }
+        
+        function displayBooks(books) {
+            const container = document.getElementById('booksList');
+            container.innerHTML = '';
+            
+            books.forEach(book => {
+                const item = document.createElement('div');
+                item.className = 'list-item';
+                item.innerHTML = `
+                    <div>
+                        <strong>${book.title}</strong><br>
+                        ${book.author ? `Autor: ${book.author}` : ''}
+                        ${book.publisher ? ` | Verlag: ${book.publisher}` : ''}
+                        ${book.year ? ` | Jahr: ${book.year}` : ''}<br>
+                        <strong>Inventarnummer:</strong> ${book.inventory_number}
+                        ${book.isbn ? `<br><strong>ISBN:</strong> ${book.isbn}` : ''}
+                    </div>
+                    <div>
+                        <span class="status status-${book.status}">${getStatusText(book.status)}</span>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+        
+        async function loadBorrowers() {
+            try {
+                const { data, error } = await supabase.from('borrowers').select('*').order('last_name');
+                if (error) throw error;
+                
+                displayBorrowers(data || []);
+            } catch (error) {
+                console.error('Error loading borrowers:', error);
+            }
+        }
+        
+        function displayBorrowers(borrowers) {
+            const container = document.getElementById('borrowersList');
+            container.innerHTML = '';
+            
+            borrowers.forEach(borrower => {
+                const item = document.createElement('div');
+                item.className = 'list-item';
+                item.innerHTML = `
+                    <div>
+                        <strong>${borrower.first_name} ${borrower.last_name}</strong><br>
+                        <strong>Nutzer-Nr:</strong> ${borrower.borrower_number}
+                        ${borrower.email ? `<br><strong>E-Mail:</strong> ${borrower.email}` : ''}
+                        ${borrower.phone ? `<br><strong>Telefon:</strong> ${borrower.phone}` : ''}
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" onclick="showLoanForm('${borrower.id}')">Ausleihen</button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+        
+        async function loadLoans() {
+            try {
+                const { data, error } = await supabase
+                    .from('loans')
+                    .select(`
+                        *,
+                        books(title, inventory_number),
+                        borrowers(first_name, last_name, borrower_number)
+                    `)
+                    .order('loan_date', { ascending: false });
+                
+                if (error) throw error;
+                
+                displayLoans(data || []);
+            } catch (error) {
+                console.error('Error loading loans:', error);
+            }
+        }
+        
+        function displayLoans(loans) {
+            const container = document.getElementById('loansList');
+            container.innerHTML = '';
+            
+            loans.forEach(loan => {
+                const item = document.createElement('div');
+                item.className = 'list-item';
+                const dueDate = new Date(loan.due_date).toLocaleDateString('de-DE');
+                const loanDate = new Date(loan.loan_date).toLocaleDateString('de-DE');
+                
+                item.innerHTML = `
+                    <div>
+                        <strong>${loan.books.title}</strong><br>
+                        <strong>Nutzer:</strong> ${loan.borrowers.first_name} ${loan.borrowers.last_name} (${loan.borrowers.borrower_number})<br>
+                        <strong>Inventarnummer:</strong> ${loan.books.inventory_number}<br>
+                        <strong>Ausleihdatum:</strong> ${loanDate}<br>
+                        <strong>Rückgabedatum:</strong> ${dueDate}
+                        ${loan.return_date ? `<br><strong>Zurückgegeben:</strong> ${new Date(loan.return_date).toLocaleDateString('de-DE')}` : ''}
+                    </div>
+                    <div>
+                        <span class="status status-${loan.status}">${getStatusText(loan.status)}</span>
+                        ${loan.status === 'active' ? `
+                            <button class="btn btn-success" onclick="returnLoan('${loan.id}')">Zurückgeben</button>
+                        ` : ''}
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+        
+        // ISBN Lookup Funktion (Scanner-Alternative)
+        async function lookupISBN() {
+            const isbnInput = document.getElementById('isbnLookup');
+            const isbn = isbnInput.value.trim().replace(/[^0-9X]/g, '');
+            
+            if (!isbn) {
+                showError('isbnResult', 'Bitte geben Sie eine ISBN ein');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('isbnResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<p>📚 Lade Buchdaten...</p>';
+            
+            try {
+                const response = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`);
+                const data = await response.json();
+                
+                if (data[`ISBN:${isbn}`]) {
+                    const bookData = data[`ISBN:${isbn}`];
+                    
+                    resultDiv.innerHTML = `
+                        <div class="book-preview">
+                            <h4>📚 Buchdaten gefunden:</h4>
+                            <p><strong>Titel:</strong> ${bookData.title || 'Unbekannt'}</p>
+                            <p><strong>Autor:</strong> ${bookData.authors ? bookData.authors.map(a => a.name).join(', ') : 'Unbekannt'}</p>
+                            <p><strong>Verlag:</strong> ${bookData.publishers ? bookData.publishers[0].name : 'Unbekannt'}</p>
+                            ${bookData.publish_date ? `<p><strong>Jahr:</strong> ${bookData.publish_date}</p>` : ''}
+                            <p><strong>ISBN:</strong> ${isbn}</p>
+                        </div>
+                        <div class="quick-add">
+                            <button class="btn btn-primary" onclick="addBookFromISBN('${isbn}', '${(bookData.title || '').replace(/'/g, "\\'")}', '${(bookData.authors ? bookData.authors.map(a => a.name).join(', ') : '').replace(/'/g, "\\'")}', '${(bookData.publishers ? bookData.publishers[0].name : '').replace(/'/g, "\\'")}', '${bookData.publish_date || ''}')">Buch hinzufügen</button>
+                            <button class="btn btn-secondary" onclick="clearISBNLookup()">Abbrechen</button>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="book-preview">
+                            <h4>📚 Keine Buchdaten gefunden</h4>
+                            <p>ISBN: ${isbn}</p>
+                            <p>Sie können das Buch manuell hinzufügen.</p>
+                        </div>
+                        <div class="quick-add">
+                            <button class="btn btn-primary" onclick="addBookFromISBN('${isbn}', '', '', '', '')">Buch manuell hinzufügen</button>
+                            <button class="btn btn-secondary" onclick="clearISBNLookup()">Abbrechen</button>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error fetching book data:', error);
+                resultDiv.innerHTML = `
+                    <div class="book-preview">
+                        <h4>📚 Fehler beim Abrufen der Buchdaten</h4>
+                        <p>ISBN: ${isbn}</p>
+                        <p>Sie können das Buch manuell hinzufügen.</p>
+                    </div>
+                    <div class="quick-add">
+                        <button class="btn btn-primary" onclick="addBookFromISBN('${isbn}', '', '', '', '')">Buch manuell hinzufügen</button>
+                        <button class="btn btn-secondary" onclick="clearISBNLookup()">Abbrechen</button>
+                    </div>
+                `;
+            }
+        }
+        
+        function addBookFromISBN(isbn, title, author, publisher, year) {
+            // Fülle das Buch-Formular mit den gefundenen Daten
+            document.getElementById('bookISBN').value = isbn;
+            document.getElementById('bookTitle').value = title;
+            document.getElementById('bookAuthor').value = author;
+            document.getElementById('bookPublisher').value = publisher;
+            document.getElementById('bookYear').value = year;
+            
+            // Zeige das Formular
+            showAddBookForm();
+            
+            // Lösche ISBN-Lookup
+            clearISBNLookup();
+            
+            // Scroll zum Formular
+            document.getElementById('addBookForm').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function clearISBNLookup() {
+            document.getElementById('isbnLookup').value = '';
+            document.getElementById('isbnResult').style.display = 'none';
+        }
+        
+        async function handleAddBook(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const bookData = Object.fromEntries(formData);
+            
+            // Generate inventory number
+            const inventoryNumber = 'LIB' + Date.now().toString().slice(-6);
+            
+            try {
+                const { data, error } = await supabase
+                    .from('books')
+                    .insert({
+                        ...bookData,
+                        inventory_number: inventoryNumber,
+                        status: 'available'
+                    });
+                
+                if (error) throw error;
+                
+                showSuccess(`Buch hinzugefügt! Inventarnummer: ${inventoryNumber}`);
+                e.target.reset();
+                hideAddBookForm();
+                loadBooks();
+                loadDashboardData();
+            } catch (error) {
+                showError('bookForm', error.message);
+            }
+        }
+        
+        async function handleAddBorrower(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const borrowerData = Object.fromEntries(formData);
+            
+            // Generate borrower number
+            const borrowerNumber = 'B' + Date.now().toString().slice(-6);
+            
+            try {
+                const { data, error } = await supabase
+                    .from('borrowers')
+                    .insert({
+                        ...borrowerData,
+                        borrower_number: borrowerNumber
+                    });
+                
+                if (error) throw error;
+                
+                showSuccess(`Nutzer hinzugefügt! Nutzer-Nr: ${borrowerNumber}`);
+                e.target.reset();
+                hideAddBorrowerForm();
+                loadBorrowers();
+                loadDashboardData();
+            } catch (error) {
+                showError('borrowerForm', error.message);
+            }
+        }
+        
+        async function handleLoan(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const loanData = Object.fromEntries(formData);
+            
+            try {
+                // Create loan
+                const { data, error } = await supabase
+                    .from('loans')
+                    .insert({
+                        book_id: loanData.book_id,
+                        borrower_id: loanData.borrower_id,
+                        due_date: loanData.due_date,
+                        staff_id: currentUser.id,
+                        status: 'active'
+                    });
+                
+                if (error) throw error;
+                
+                // Update book status
+                await supabase
+                    .from('books')
+                    .update({ status: 'loaned' })
+                    .eq('id', loanData.book_id);
+                
+                showSuccess('Ausleihe erfolgreich erstellt!');
+                e.target.reset();
+                hideLoanForm();
+                loadLoans();
+                loadBooks();
+                loadDashboardData();
+            } catch (error) {
+                showError('newLoanForm', error.message);
+            }
+        }
+        
+        async function returnLoan(loanId) {
+            if (!confirm('Möchten Sie dieses Buch wirklich zurückgeben?')) {
+                return;
+            }
+            
+            try {
+                // Get loan details
+                const { data: loan, error: loanError } = await supabase
+                    .from('loans')
+                    .select('book_id')
+                    .eq('id', loanId)
+                    .eq('status', 'active')
+                    .single();
+                
+                if (loanError) throw loanError;
+                
+                // Update loan
+                await supabase
+                    .from('loans')
+                    .update({ 
+                        status: 'returned',
+                        return_date: new Date().toISOString()
+                    })
+                    .eq('id', loanId);
+                
+                // Update book status
+                await supabase
+                    .from('books')
+                    .update({ status: 'available' })
+                    .eq('id', loan.book_id);
+                
+                showSuccess('Buch erfolgreich zurückgegeben!');
+                loadLoans();
+                loadBooks();
+                loadDashboardData();
+            } catch (error) {
+                showError('loansList', error.message);
+            }
+        }
+        
+        // Form visibility functions
+        function showAddBookForm() {
+            document.getElementById('addBookForm').style.display = 'block';
+        }
+        
+        function hideAddBookForm() {
+            document.getElementById('addBookForm').style.display = 'none';
+        }
+        
+        function showAddBorrowerForm() {
+            document.getElementById('addBorrowerForm').style.display = 'block';
+        }
+        
+        function hideAddBorrowerForm() {
+            document.getElementById('addBorrowerForm').style.display = 'none';
+        }
+        
+        async function showLoanForm(borrowerId = null) {
+            document.getElementById('loanForm').style.display = 'block';
+            
+            if (borrowerId) {
+                document.getElementById('loanBorrower').value = borrowerId;
+            }
+            
+            // Load available books
+            try {
+                const { data: books } = await supabase
+                    .from('books')
+                    .select('*')
+                    .eq('status', 'available');
+                
+                const bookSelect = document.getElementById('loanBook');
+                bookSelect.innerHTML = '<option value="">Buch auswählen...</option>';
+                books.forEach(book => {
+                    const option = document.createElement('option');
+                    option.value = book.id;
+                    option.textContent = `${book.title} (${book.inventory_number})`;
+                    bookSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading books:', error);
+            }
+            
+            // Load borrowers
+            try {
+                const { data: borrowers } = await supabase
+                    .from('borrowers')
+                    .select('*');
+                
+                const borrowerSelect = document.getElementById('loanBorrower');
+                borrowerSelect.innerHTML = '<option value="">Nutzer auswählen...</option>';
+                borrowers.forEach(borrower => {
+                    const option = document.createElement('option');
+                    option.value = borrower.id;
+                    option.textContent = `${borrower.first_name} ${borrower.last_name} (${borrower.borrower_number})`;
+                    borrowerSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading borrowers:', error);
+            }
+            
+            // Set default due date
+            const dueDate = new Date();
+            dueDate.setDate(dueDate.getDate() + 28);
+            document.getElementById('loanDueDate').value = dueDate.toISOString().split('T')[0];
+        }
+        
+        function hideLoanForm() {
+            document.getElementById('loanForm').style.display = 'none';
+        }
+        
+        // Search functions
+        async function searchBooks(query) {
+            try {
+                const { data, error } = await supabase
+                    .from('books')
+                    .select('*')
+                    .or(`title.ilike.%${query}%,author.ilike.%${query}%,isbn.ilike.%${query}%,inventory_number.ilike.%${query}%`)
+                    .order('title');
+                
+                if (error) throw error;
+                displayBooks(data || []);
+            } catch (error) {
+                console.error('Error searching books:', error);
+            }
+        }
+        
+        async function searchBorrowers(query) {
+            try {
+                const { data, error } = await supabase
+                    .from('borrowers')
+                    .select('*')
+                    .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,borrower_number.ilike.%${query}%`)
+                    .order('last_name');
+                
+                if (error) throw error;
+                displayBorrowers(data || []);
+            } catch (error) {
+                console.error('Error searching borrowers:', error);
+            }
+        }
+        
+        // Utility functions
+        function getStatusText(status) {
+            const statusMap = {
+                'available': 'Verfügbar',
+                'loaned': 'Ausgeliehen',
+                'maintenance': 'Wartung',
+                'lost': 'Verloren',
+                'active': 'Aktiv',
+                'returned': 'Zurückgegeben',
+                'overdue': 'Überfällig'
+            };
+            return statusMap[status] || status;
+        }
+        
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = message;
+                element.style.display = 'block';
+            }
+        }
+        
+        function showSuccess(message) {
+            // Create temporary success message
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success';
+            successDiv.textContent = message;
+            document.querySelector('.container').insertBefore(successDiv, document.querySelector('.nav'));
+            
+            setTimeout(() => {
+                successDiv.remove();
+            }, 3000);
+        }
+        
+        // CSV Import Functions mit vordefinierten Daten
+        let predefinedBooks = [];
+        let predefinedBorrowers = [];
+        
+        // CSV-Daten aus ps-biblio-backup laden
+        async function loadPredefinedData() {
+            try {
+                // Bücher-Daten laden
+                const booksResponse = await fetch('ps-biblio-backup/books.csv');
+                const booksText = await booksResponse.text();
+                predefinedBooks = parseCSVData(booksText);
+                
+                // Benutzer-Daten laden
+                const borrowersResponse = await fetch('ps-biblio-backup/borrowers.csv');
+                const borrowersText = await borrowersResponse.text();
+                predefinedBorrowers = parseCSVData(borrowersText);
+                
+                console.log(`📚 ${predefinedBooks.length} Bücher geladen`);
+                console.log(`👥 ${predefinedBorrowers.length} Benutzer geladen`);
+            } catch (error) {
+                console.error('Fehler beim Laden der CSV-Daten:', error);
+            }
+        }
+        
+        function parseCSVData(text) {
+            const lines = text.split('\n').filter(line => line.trim());
+            if (lines.length < 2) return [];
+            
+            const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+            const data = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const values = [];
+                let current = '';
+                let inQuotes = false;
+                
+                for (let j = 0; j < lines[i].length; j++) {
+                    const char = lines[i][j];
+                    
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        values.push(current.replace(/"/g, '').trim());
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                values.push(current.replace(/"/g, '').trim());
+                
+                const row = {};
+                headers.forEach((header, index) => {
+                    row[header] = values[index] || '';
+                });
+                data.push(row);
+            }
+            
+            return data;
+        }
+        
+        function showCSVImport() {
+            document.getElementById('csvImport').style.display = 'block';
+            
+            // Zeige vordefinierte Daten als Option
+            const csvImportDiv = document.getElementById('csvImport');
+            const predefinedOption = document.createElement('div');
+            predefinedOption.innerHTML = `
+                <div style="margin-bottom: 1rem; padding: 1rem; background: #e0f2fe; border-radius: 0.5rem; border: 1px solid #0277bd;">
+                    <h4>📚 Vordefinierte Daten verfügbar</h4>
+                    <p><strong>Bücher:</strong> ${predefinedBooks.length} Einträge</p>
+                    <p><strong>Benutzer:</strong> ${predefinedBorrowers.length} Einträge</p>
+                    <button class="btn btn-primary" onclick="importPredefinedBooks()">Bücher importieren</button>
+                    <button class="btn btn-primary" onclick="importPredefinedBorrowers()">Benutzer importieren</button>
+                    <button class="btn btn-success" onclick="importAllPredefinedData()">Alle Daten importieren</button>
+                </div>
+            `;
+            csvImportDiv.insertBefore(predefinedOption, csvImportDiv.firstChild);
+        }
+        
+        function hideCSVImport() {
+            document.getElementById('csvImport').style.display = 'none';
+            document.getElementById('csvFile').value = '';
+            document.getElementById('csvPreview').style.display = 'none';
+            csvData = null;
+        }
+        
+        function handleCSVFile() {
+            const file = document.getElementById('csvFile').files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                parseCSV(text);
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+        
+        function parseCSV(text) {
+            const lines = text.split('\n').filter(line => line.trim());
+            if (lines.length < 2) {
+                showError('csvPreview', 'CSV-Datei muss mindestens eine Überschrift und eine Datenzeile enthalten');
+                return;
+            }
+            
+            const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+            const requiredHeaders = ['title'];
+            const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+            
+            if (missingHeaders.length > 0) {
+                showError('csvPreview', `Fehlende Spalten: ${missingHeaders.join(', ')}. Mindestens 'title' ist erforderlich.`);
+                return;
+            }
+            
+            csvData = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',').map(v => v.trim());
+                if (values.length >= headers.length) {
+                    const row = {};
+                    headers.forEach((header, index) => {
+                        row[header] = values[index] || '';
+                    });
+                    if (row.title) { // Nur Zeilen mit Titel hinzufügen
+                        csvData.push(row);
+                    }
+                }
+            }
+            
+            if (csvData.length === 0) {
+                showError('csvPreview', 'Keine gültigen Daten gefunden');
+                return;
+            }
+            
+            displayCSVPreview();
+        }
+        
+        function displayCSVPreview() {
+            const previewDiv = document.getElementById('csvPreview');
+            const tableDiv = document.getElementById('csvTable');
+            
+            let tableHTML = '<table style="width: 100%; border-collapse: collapse;">';
+            tableHTML += '<thead><tr style="background: #f8fafc;">';
+            
+            // Header
+            const headers = Object.keys(csvData[0]);
+            headers.forEach(header => {
+                tableHTML += `<th style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: left;">${header}</th>`;
+            });
+            tableHTML += '</tr></thead><tbody>';
+            
+            // Data rows (max 10 für Vorschau)
+            const previewRows = csvData.slice(0, 10);
+            previewRows.forEach(row => {
+                tableHTML += '<tr>';
+                headers.forEach(header => {
+                    tableHTML += `<td style="padding: 0.5rem; border: 1px solid #e5e7eb;">${row[header] || ''}</td>`;
+                });
+                tableHTML += '</tr>';
+            });
+            
+            tableHTML += '</tbody></table>';
+            
+            if (csvData.length > 10) {
+                tableHTML += `<p style="margin-top: 0.5rem; color: #64748b;">... und ${csvData.length - 10} weitere Zeilen</p>`;
+            }
+            
+            tableDiv.innerHTML = tableHTML;
+            previewDiv.style.display = 'block';
+        }
+        
+        async function importCSVData() {
+            if (!csvData || csvData.length === 0) {
+                showError('csvPreview', 'Keine Daten zum Importieren');
+                return;
+            }
+            
+            let successCount = 0;
+            let errorCount = 0;
+            
+            for (const row of csvData) {
+                try {
+                    const inventoryNumber = 'LIB' + Date.now().toString().slice(-6) + Math.random().toString().slice(-3);
+                    
+                    const bookData = {
+                        isbn: row.isbn || '',
+                        title: row.title,
+                        author: row.author || '',
+                        publisher: row.publisher || '',
+                        year: row.year ? parseInt(row.year) : null,
+                        inventory_number: inventoryNumber,
+                        status: 'available'
+                    };
+                    
+                    const { error } = await supabase
+                        .from('books')
+                        .insert([bookData]);
+                    
+                    if (error) throw error;
+                    successCount++;
+                    
+                } catch (error) {
+                    console.error('Error importing row:', error);
+                    errorCount++;
+                }
+            }
+            
+            hideCSVImport();
+            showSuccess(`${successCount} Bücher erfolgreich importiert${errorCount > 0 ? `, ${errorCount} Fehler` : ''}`);
+            loadBooks();
+            loadDashboardData();
+        }
+        
+        function downloadTemplate() {
+            const csvContent = 'isbn,title,author,publisher,year\n978-3-123-45678-9,Beispiel Buch,Max Mustermann,Verlag ABC,2023\n978-3-987-65432-1,Weiteres Buch,Jane Doe,Verlag XYZ,2022';
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'buecher-vorlage.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // Import-Funktionen für vordefinierte Daten
+        async function importPredefinedBooks() {
+            if (predefinedBooks.length === 0) {
+                showError('csvPreview', 'Keine vordefinierten Bücher-Daten verfügbar');
+                return;
+            }
+            
+            let successCount = 0;
+            let errorCount = 0;
+            
+            showSuccess('Starte Bücher-Import...');
+            
+            for (const book of predefinedBooks) {
+                try {
+                    if (!book.title || book.title.trim() === '') continue;
+                    
+                    const inventoryNumber = book.inventory_number || 'LIB' + Date.now().toString().slice(-6) + Math.random().toString().slice(-3);
+                    
+                    const bookData = {
+                        isbn: book.isbn || '',
+                        title: book.title.trim(),
+                        author: book.author || 'Unbekannt',
+                        publisher: book.publisher || '',
+                        year: book.year && book.year !== '' ? parseInt(book.year) : null,
+                        inventory_number: inventoryNumber,
+                        status: 'available'
+                    };
+                    
+                    const { error } = await supabase
+                        .from('books')
+                        .insert([bookData]);
+                    
+                    if (error) throw error;
+                    successCount++;
+                    
+                } catch (error) {
+                    console.error('Fehler beim Importieren des Buches:', error);
+                    errorCount++;
+                }
+            }
+            
+            hideCSVImport();
+            showSuccess(`${successCount} Bücher erfolgreich importiert${errorCount > 0 ? `, ${errorCount} Fehler` : ''}`);
+            loadBooks();
+            loadDashboardData();
+        }
+        
+        async function importPredefinedBorrowers() {
+            if (predefinedBorrowers.length === 0) {
+                showError('csvPreview', 'Keine vordefinierten Benutzer-Daten verfügbar');
+                return;
+            }
+            
+            let successCount = 0;
+            let errorCount = 0;
+            
+            showSuccess('Starte Benutzer-Import...');
+            
+            for (const borrower of predefinedBorrowers) {
+                try {
+                    if ((!borrower.first_name || borrower.first_name.trim() === '') && 
+                        (!borrower.last_name || borrower.last_name.trim() === '')) continue;
+                    
+                    const borrowerNumber = borrower.borrower_number || 'B' + Date.now().toString().slice(-6) + Math.random().toString().slice(-3);
+                    
+                    const borrowerData = {
+                        first_name: borrower.first_name || '',
+                        last_name: borrower.last_name || '',
+                        email: borrower.email || '',
+                        phone: borrower.phone || '',
+                        borrower_number: borrowerNumber
+                    };
+                    
+                    const { error } = await supabase
+                        .from('borrowers')
+                        .insert([borrowerData]);
+                    
+                    if (error) throw error;
+                    successCount++;
+                    
+                } catch (error) {
+                    console.error('Fehler beim Importieren des Benutzers:', error);
+                    errorCount++;
+                }
+            }
+            
+            hideCSVImport();
+            showSuccess(`${successCount} Benutzer erfolgreich importiert${errorCount > 0 ? `, ${errorCount} Fehler` : ''}`);
+            loadBorrowers();
+            loadDashboardData();
+        }
+        
+        async function importAllPredefinedData() {
+            if (!confirm('Möchten Sie wirklich alle vordefinierten Daten importieren?\n\nDies kann einige Minuten dauern.')) {
+                return;
+            }
+            
+            showSuccess('Starte vollständigen Datenimport...');
+            
+            // Erst Bücher importieren
+            await importPredefinedBooks();
+            
+            // Dann Benutzer importieren
+            await importPredefinedBorrowers();
+            
+            showSuccess('Vollständiger Datenimport abgeschlossen!');
+        }
+    </script>
+</body>
+</html>
